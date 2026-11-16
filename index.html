@@ -51,7 +51,8 @@ svg{display:block}
 /* 점수판 */
 .board{position:relative;z-index:2;margin:14px 0 14px 14px;background:var(--blue);border:8px solid var(--wood);border-radius:6px;box-shadow:0 6px 0 var(--wood-3),0 12px 18px rgba(80,40,0,.25);color:#fff;padding:14px 12px;display:flex;flex-direction:column;gap:14px;min-height:0}
 .slot-label{font-size:16px;color:#d6e3ff;margin-bottom:8px}
-.plates{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-end}
+.plates{display:flex;gap:3px;flex-wrap:nowrap;align-items:flex-end}
+#moneyPlates .plate{min-width:0;flex:1 1 0;max-width:34px;padding:0 1px}
 .plate{position:relative;min-width:clamp(24px,2.3vw,32px);height:clamp(36px,4.6vh,46px);padding:0 4px;background:var(--chalk);color:var(--ink);border-radius:3px;font-family:var(--digits);font-size:clamp(24px,2.6vw,32px);line-height:clamp(36px,4.6vh,46px);text-align:center;box-shadow:0 3px 0 #c9bfa8}
 .plate::before{content:"";position:absolute;top:-6px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#1b1b1b}
 .plate.flip{animation:flip .38s ease-out}
@@ -374,6 +375,20 @@ body:has(.overlay:not([hidden])) .hint,body:has(.title:not([hidden])) .hint{disp
 [data-place="night"] .garland .rope{border-color:#c9b98f}
 [data-place="snow"] .queue::before,[data-place="snow"] .queue::after{border-color:rgba(110,130,160,.4)}
 
+/* 손님 뽑기 */
+.notice.gacha{text-align:center;rotate:0deg;min-height:420px;display:grid;place-items:center}
+.capsule{position:absolute;left:50%;top:50%;width:150px;height:150px;translate:-50% -50%;animation:capshake .8s ease-in-out both}
+.capsule i{position:absolute;left:0;right:0;height:50%;border:4px solid var(--ink)}
+.cap-top{top:0;border-radius:75px 75px 0 0;background:var(--red);animation:captop .5s .8s cubic-bezier(.16,1,.3,1) forwards}
+.cap-bot{bottom:0;border-radius:0 0 75px 75px;background:#fffaf0;animation:capbot .5s .8s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes capshake{20%,60%{rotate:-12deg}40%,80%{rotate:12deg}}
+@keyframes captop{to{translate:0 -140px;rotate:-25deg;opacity:0}}
+@keyframes capbot{to{translate:0 140px;rotate:20deg;opacity:0}}
+.g-reveal{display:grid;justify-items:center;gap:6px;animation:inkin .5s 1s cubic-bezier(.16,1,.3,1) both}
+.g-reveal .fig{max-width:none}
+.g-reveal img{height:clamp(150px,26vh,230px);width:auto}
+.g-reveal h2{margin-top:10px}
+
 /* 매점 꾸미기 */
 .deco-sec{margin-top:16px}
 .deco-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -423,6 +438,9 @@ body:has(.overlay:not([hidden])) .hint,body:has(.title:not([hidden])) .hint{disp
 .chip[aria-pressed="true"] .box svg{display:block}
 .shop{display:grid;gap:8px}
 .buy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 4px;text-align:left;border-bottom:2px dashed rgba(246,243,232,.3);color:#f6f3e8}
+.shop-extra{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.shop-extra .buy{grid-template-columns:minmax(0,1fr);gap:2px}
+.shop-extra .price{justify-self:start}
 .buy-t{display:flex;align-items:center;gap:10px;min-width:0}
 .mini-kettle svg{width:46px;height:auto;position:static}
 .buy b{display:block;font-weight:400;font-size:21px}
@@ -623,6 +641,7 @@ body:has(.overlay:not([hidden])) .hint,body:has(.title:not([hidden])) .hint{disp
 </div>
 <div class="overlay" id="goal" hidden><div class="notice" id="goalPanel" role="dialog" aria-modal="true" aria-label="오늘의 목표"></div></div>
 <div class="overlay" id="pause" hidden><div class="notice" id="pausePanel" role="dialog" aria-modal="true" aria-label="잠깐 멈춤"></div></div>
+<div class="overlay" id="gacha" hidden><div class="notice gacha" id="gachaPanel" role="dialog" aria-modal="true" aria-label="손님 뽑기 결과"></div></div>
 <div class="overlay" id="decor" hidden><div class="notebook wide" id="decorPanel" role="dialog" aria-modal="true" aria-label="매점 꾸미기"></div></div>
 <div class="overlay" id="share" hidden><div class="notebook" id="sharePanel" role="dialog" aria-modal="true" aria-label="선생님께 보내기"></div></div>
 <div class="overlay" id="teacher" hidden><div class="notebook wide" id="teacherPanel" role="dialog" aria-modal="true" aria-label="선생님 통계"></div></div>
@@ -705,6 +724,33 @@ function openDecor(){
   });
 }
 
+// 손님 뽑기: 1회 10,000원. 드문 손님 확률은 평소의 2배이고, 뽑은 손님은 다음 날 꼭 온다(최대 3명까지 예약)
+const GACHA_PRICE = 10000, GACHA_MAX = 3;
+const GACHA_ODDS = {dimension:.003, fantasy:.016, myth:.04, legend:.24};
+function rollGacha(rand = Math.random){
+  let r = rand(), tier = 'rare';
+  for(const t of ['dimension','fantasy','myth','legend']){ if((r -= GACHA_ODDS[t]) < 0){ tier = t; break; } }
+  const pool = GUESTS.filter(g => tier === 'rare' ? (g.tier === 'rare' || g.tier === 'common') : g.tier === tier);
+  return pool[Math.floor(rand() * pool.length)];
+}
+function openGacha(){
+  if(save.money < GACHA_PRICE || save.reserved.length >= GACHA_MAX) return;
+  save.money -= GACHA_PRICE; renderMoney();
+  const g = rollGacha(); save.reserved.push(g.id); persist();
+  const fresh = !save.met.includes(g.id);
+  gachaPanel.innerHTML = `
+    <div class="capsule" aria-hidden="true"><i class="cap-top"></i><i class="cap-bot"></i></div>
+    <div class="g-reveal">
+      <span class="fig ${g.tier}"><img src="${g.img}" alt="${esc(g.name)}" style="max-height:${Math.round((g.h||256)*1.7)}px">${SPECIAL(g.tier) ? `<span class="sash">${TIER[g.tier].name} 손님</span>` : ''}</span>
+      <h2>${esc(g.name)}</h2>
+      <p class="gsub">${fresh ? '아직 도감에 없는 손님이에요! ' : ''}${save.day}일째에 꼭 와요. 주문을 다 받아야 도감에 들어가요.</p>
+      <button class="big" id="gachaOk" type="button">좋아요</button>
+    </div>`;
+  show(gachaOv);
+  $('gachaOk').onclick = () => { hide(gachaOv); openPrep(); };
+  setTimeout(() => $('gachaOk')?.focus(), 900);
+}
+
 // 주전자: 반죽을 붓는 주전자 색이 바뀌고, 다 구운 붕어빵이 노릇한 채로 더 오래 버틴다(타기 전까지 걸리는 시간 +초)
 const KETTLES = [
   {name:'기본 주전자',     sec:0, price:0,     body:'#e4e8ea', line:'#7d868b', lid:'#7d868b'},
@@ -712,7 +758,10 @@ const KETTLES = [
   {name:'금 주전자',       sec:2, price:12000, body:'#f6cf4a', line:'#a8780a', lid:'#d9a520'},
   {name:'플래티넘 주전자', sec:3, price:25000, body:'#e3e1ef', line:'#7f7ea0', lid:'#b6b3d0'},
   {name:'에메랄드 주전자', sec:4, price:45000, body:'#2fbf71', line:'#16733f', lid:'#1f9a57'},
-  {name:'다이아 주전자',   sec:4, price:100000, body:'#e6f8ff', line:'#3f8fb8', lid:'#9fdcf5', double:true},   // 옆 빈 틀까지 한 번에 2개
+  {name:'다이아 주전자',   sec:4, price:100000,  body:'#e6f8ff', line:'#3f8fb8', lid:'#9fdcf5', fill:2},   // fill: 빈 틀 몇 개를 한 번에 채우나
+  {name:'마스터 주전자',   sec:5, price:300000,  body:'#6a3fb5', line:'#e8b100', lid:'#b38cf0', fill:3},
+  {name:'그랜드마스터 주전자', sec:7, price:500000, body:'#b8213a', line:'#ffd34d', lid:'#ff8a9a', fill:4},
+  {name:'챌린저 주전자',   sec:Infinity, price:1000000, body:'#1d1d2b', line:'#ffd700', lid:'#ff4fd8', fill:5, noburn:true},   // 절대 타지 않는다
 ];
 const BASE_T = {front:6, flipWait:6, back:6, perfect:3, over:4};
 const COUNTER_MAX = 12, DAY_GUESTS = 8;   // 진열대는 12개까지
@@ -796,7 +845,7 @@ const icon = (id, cls='') => `<svg class="${cls}" aria-hidden="true"><use href="
 
 // ---------- 저장 ----------
 const SAVE_KEY = 'bungeo-tycoon-v1';
-const fresh = () => ({v:1, seed:Math.floor(Math.random()*1e9), money:0, molds:2, fire:0, recipes:['pat','cream'], kettle:0, decor:{owned:['blue','wood','iron'], tent:'blue', cloth:'wood', griddle:'iron'}, day:1,
+const fresh = () => ({v:1, seed:Math.floor(Math.random()*1e9), money:0, molds:2, fire:0, recipes:['pat','cream'], kettle:0, reserved:[], decor:{owned:['blue','wood','iron'], tent:'blue', cloth:'wood', griddle:'iron'}, day:1,
   topic:0, lastTopic:-1, best:0, met:[], note:{}, nick:'', stats:{served:0, perfect:0, quizRight:0, quizTotal:0}, qstats:{}});
 let save = fresh(), canSave = true;
 function load(){
@@ -808,6 +857,7 @@ function load(){
       save.molds = Math.min(6, Math.max(2, save.molds|0));
       save.fire = Math.min(3, Math.max(0, save.fire|0));
       save.kettle = Math.min(KETTLES.length - 1, Math.max(0, save.kettle|0));
+      save.reserved = (Array.isArray(save.reserved) ? save.reserved : []).filter(id => GUEST[id]).slice(0, GACHA_MAX);
       const d = save.decor && typeof save.decor === 'object' ? save.decor : {}, all = Object.values(DECOR).flatMap(x => x.items.map(i => i.id));
       save.decor = {owned:[...new Set(['blue','wood','iron', ...(Array.isArray(d.owned) ? d.owned : []).filter(id => all.includes(id))])]};
       for(const slot in DECOR) save.decor[slot] = save.decor.owned.includes(d[slot]) && DECOR[slot].items.some(i => i.id === d[slot]) ? d[slot] : DECOR[slot].items[0].id;
@@ -857,11 +907,16 @@ function rollTier(){
   return 'rare';
 }
 function spawnGuest(){
-  const tier = rollTier();
   const here = new Set(G.guests.map(g => g.ch));
-  let pool = GUESTS.filter(g => (tier==='rare' ? (g.tier==='rare'||g.tier==='common') : g.tier===tier) && !here.has(g.id));
-  if(!pool.length) pool = GUESTS.filter(g => !here.has(g.id));
-  const ch = pick(pool);
+  const left = G.target - G.spawned, due = save.reserved.length && ([1,3,5].includes(G.spawned) || left <= save.reserved.length);
+  let ch;
+  if(due && !here.has(save.reserved[0])){ ch = GUEST[save.reserved.shift()]; }   // 손님 뽑기로 예약한 손님은 꼭 온다
+  else {
+    const tier = rollTier();
+    let pool = GUESTS.filter(g => (tier==='rare' ? (g.tier==='rare'||g.tier==='common') : g.tier===tier) && !here.has(g.id));
+    if(!pool.length) pool = GUESTS.filter(g => !here.has(g.id));
+    ch = pick(pool);
+  }
   const tastes = Object.entries(TASTES);
   let r = rng() * tastes.reduce((s,[,t])=>s+t.weight,0), taste = 'easy';
   for(const [k,t] of tastes){ if((r -= t.weight) < 0){ taste = k; break; } }
@@ -901,14 +956,14 @@ function resolveGuest(c, done){
   const p = payFor(c, done, G.combo, G.fever > 0);
   addMoney(p.total, 'sales');
   if(done){ G.d.served++; save.stats.served++; } else G.d.left++;
-  if(!save.met.includes(c.ch)) save.met.push(c.ch);
+  if(done && !save.met.includes(c.ch)) save.met.push(c.ch);   // 주문을 다 받고 간 손님만 도감에 들어간다
   const tier = GUEST[c.ch].tier;
   if(done && SPECIAL(tier)) G.d.rare++;
   if(allPerfect) addBuzz(BUZZ_PERFECT);
   G.flags.push(done ? 'served' : 'left'); dirty.garland = true;
   c.leaving = .5; c.happy = done; dirty.queue = true; renderQueue();
   const extra = [p.mul > 1 ? `콤보 ×${p.mul}` : '', p.bonus ? `${TIER[tier].name} 보너스` : '', p.tip ? '팁' : ''].filter(Boolean).join(' · ');
-  floatText(c.id, p.total ? `+${won(p.total)}` : '그냥 갔어요', done ? extra : '기다리다 갔어요', !done);
+  floatText(c.id, p.total ? `+${won(p.total)}` : '그냥 갔어요', done ? (c.isNew ? ['도감에 들어왔어요', extra].filter(Boolean).join(' · ') : extra) : (c.isNew ? '도감에 못 넣었어요' : '기다리다 갔어요'), !done);
   if(done && (G.combo === 3 || G.combo === 5)) banner(`${G.combo} 콤보! 값 ×${comboMul(G.combo)}`, 'blue');
   G.resolved++; G.sinceQuiz++; G.spawnIn = G.fever > 0 ? 1.2 : rspan(G.cfg.gap);
   if(G.sinceQuiz >= QUIZ_EVERY){ G.sinceQuiz = 0; G.quizLeft = QUIZ_SET; openQuiz(); }
@@ -933,9 +988,17 @@ function tapMold(i){
   switch(m.phase){
     case 'empty': {
       m.phase='batter'; m.t=0; G.taught.batter=1; fx(el, 'pour'); replay(el.querySelector('svg.fish'), 'filling');
-      if(KETTLES[save.kettle].double){   // 다이아 주전자: 바로 옆(같은 줄 좌우 → 위아래) 빈 틀도 함께 채운다
-        const j = [i+1, i-1, i+3, i-3].find(j => j >= 0 && j < G.molds.length && G.molds[j].phase === 'empty' && (Math.abs(j - i) === 3 || Math.floor(j/3) === Math.floor(i/3)));
-        if(j !== undefined){ G.molds[j].phase = 'batter'; G.molds[j].t = 0; fx(moldEls[j], 'pour'); replay(moldEls[j].querySelector('svg.fish'), 'filling'); }
+      const extra = (KETTLES[save.kettle].fill || 1) - 1;
+      if(extra > 0){   // 좋은 주전자: 가까운 빈 틀부터(같은 줄 좌우 → 위아래로 번져 가며) 함께 채운다
+        const near = j => [j+1, j-1, j+3, j-3].filter(k => k >= 0 && k < G.molds.length && (Math.abs(k - j) === 3 || Math.floor(k/3) === Math.floor(j/3)));
+        const seen = new Set([i]), q = [i], picked = [];
+        while(q.length && picked.length < extra){
+          for(const k of near(q.shift())){
+            if(seen.has(k)) continue; seen.add(k); q.push(k);
+            if(G.molds[k].phase === 'empty' && picked.length < extra) picked.push(k);
+          }
+        }
+        for(const j of picked){ G.molds[j].phase = 'batter'; G.molds[j].t = 0; fx(moldEls[j], 'pour'); replay(moldEls[j].querySelector('svg.fish'), 'filling'); }
       }
       break;
     }
@@ -953,7 +1016,7 @@ function tapMold(i){
   }
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
-const moldLimit = m => ({front:bakeT('front',m.f||'pat'), flip:T('flipWait'), back:bakeT('back',m.f||'pat'), perfect:T('perfect') + KETTLES[save.kettle].sec, over:T('over')})[m.phase] || 0;
+const moldLimit = m => ({front:bakeT('front',m.f||'pat'), flip:KETTLES[save.kettle].noburn ? Infinity : T('flipWait'), back:bakeT('back',m.f||'pat'), perfect:T('perfect') + KETTLES[save.kettle].sec, over:T('over')})[m.phase] || 0;
 function stepMold(m, dt){
   if(m.phase==='empty' || m.phase==='batter' || m.phase==='burnt') return;
   m.t += dt;
@@ -1274,7 +1337,7 @@ function goalItems(live){
 function openGoal(){
   goalPanel.innerHTML = `
     <h2>${G.day}일째 목표</h2>
-    <p class="gsub">오늘 장소: <b>${placeFor(G.day).name}</b><br>오늘 주제: <b>${esc(QB.topics[G.topic])}</b> · 손님 ${G.target}명</p>
+    <p class="gsub">오늘 장소: <b>${placeFor(G.day).name}</b><br>오늘 주제: <b>${esc(QB.topics[G.topic])}</b> · 손님 ${G.target}명${save.reserved.length ? `<br>꼭 오는 손님: <b>${save.reserved.map(id => esc(GUEST[id].name)).join(', ')}</b>` : ''}</p>
     <ol class="goallist">${goalItems(false)}</ol>
     <p class="gsub">셋 다 지키면 상장에 도장 3개를 받아요.</p>
     <button class="big" id="goalGo" type="button">준비, 시작!</button>`;
@@ -1322,7 +1385,7 @@ function endDay(){
 }
 
 // ---------- 준비 화면 ----------
-const kettleDesc = k => k.double ? `옆 빈 틀까지 2개를 한 번에 채워요 · ${k.sec}초 더 노릇` : `다 구운 붕어빵이 ${k.sec}초 더 노릇해요`;
+const kettleDesc = k => (k.fill ? `빈 틀 ${k.fill}개를 한 번에 채워요 · ` : '') + (k.noburn ? '붕어빵이 절대 타지 않아요' : `다 구운 붕어빵이 ${k.sec}초 더 노릇해요`);
 function shopItems(){
   const items = [], nm = save.molds + 1;
   items.push(nm <= 6 ? {key:'mold', title:`붕어빵 틀 ${nm}번째`, desc:'한 번에 하나 더 구워요', price:MOLD_PRICE[nm]} : {key:'mold', title:'붕어빵 틀 6개', desc:'틀을 다 모았어요', owned:true});
@@ -1386,15 +1449,17 @@ function openPrep(){
       <h3>매점 물건 · 가진 돈 <span class="wallet">${won(save.money)}</span></h3>
       <div class="shop">${shopItems().map(it=>`<button class="buy ${it.owned?'owned':''}" data-k="${it.key}" ${it.owned||save.money<it.price?'disabled':''}>
         <div class="buy-t">${it.kettle != null ? `<span class="mini-kettle" style="--kb:${KETTLES[it.kettle].body};--kl:${KETTLES[it.kettle].line};--kd:${KETTLES[it.kettle].lid}">${TOOL.kettle}</span>` : ''}<div><b>${it.title}</b><span>${it.desc}</span></div></div><span class="price">${it.owned ? icon('i-check') + '있음' : won(it.price)}</span></button>`).join('')}
-        <button class="buy" id="decorBtn" type="button"><div><b>매점 꾸미기</b><span>천막, 진열대, 화판 · ${save.decor.owned.length - 3}/${Object.values(DECOR).reduce((n,d)=>n+d.items.length-1,0)}개 모음</span></div><span class="price">고르기</span></button></div>
+        <div class="shop-extra"><button class="buy" id="gachaBtn" type="button" ${save.money < GACHA_PRICE || save.reserved.length >= GACHA_MAX ? 'disabled' : ''}><div><b>내일 손님 뽑기</b><span>${save.reserved.length >= GACHA_MAX ? '예약 가득 (3명)' : `드문 손님 2배 · 꼭 와요 · ${save.reserved.length}/${GACHA_MAX}`}</span></div><span class="price">${won(GACHA_PRICE)}</span></button>
+        <button class="buy" id="decorBtn" type="button"><div><b>매점 꾸미기</b><span>${save.decor.owned.length - 3}/${Object.values(DECOR).reduce((n,d)=>n+d.items.length-1,0)}개 모음</span></div><span class="price">고르기</span></button></div></div>
       <button class="big" id="startDay">${save.day}일째 장사 시작</button>
     </div>`;
   prepPanel.querySelectorAll('.chip').forEach(b => b.onclick = () => {
     save.topic = +b.dataset.t; persist();
     prepPanel.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x===b));
   });
-  prepPanel.querySelectorAll('.buy:not(#decorBtn)').forEach(b => b.onclick = () => buy(b.dataset.k));
+  prepPanel.querySelectorAll('.buy:not(#decorBtn):not(#gachaBtn)').forEach(b => b.onclick = () => buy(b.dataset.k));
   $('decorBtn').onclick = () => { hide(prepOv); openDecor(); };
+  $('gachaBtn').onclick = () => { hide(prepOv); openGacha(); };
   $('noteBtn').onclick = () => { hide(prepOv); openNotes(); };
   $('shareBtn').onclick = () => { hide(prepOv); openShare(); };
   prepPanel.querySelector('#startDay').onclick = () => { hide(prepOv); newDay(); renderAll(); openGoal(); };
@@ -1404,6 +1469,7 @@ function openPrep(){
 // ---------- 화면 ----------
 const $ = id => document.getElementById(id);
 const queueEl=$('queue'), counterEl=$('counter'), griddle=$('griddle'), tins=$('tins'), hint=$('hint'), garland=$('garland');
+const gachaOv=$('gacha'), gachaPanel=$('gachaPanel');
 const decorOv=$('decor'), decorPanel=$('decorPanel');
 const shareOv=$('share'), sharePanel=$('sharePanel'), teacherOv=$('teacher'), teacherPanel=$('teacherPanel');
 const notesOv=$('notes'), notesPanel=$('notesPanel');
@@ -1660,6 +1726,8 @@ function selfTest(){
   ok(sameAnswer(' 선사시대 ', '선사 시대') && sameAnswer('주먹도끼', '주먹도끼') && !sameAnswer('', '움집') && !sameAnswer('간석기', '뗀석기'), '주관식 채점');
   { const keep = save.note, q0 = QB.questions[0]; save.note = {}; noteMark(q0,false); const a = save.note[q0.q]===0; noteMark(q0,true); const b = save.note[q0.q]===1; noteMark(q0,true); const c = !(q0.q in save.note); save.note = keep; ok(a && b && c, '오답 노트: 틀리면 들어가고 2번 맞히면 빠짐'); }
   { const keep = {q:save.qstats, n:save.nick}; save.qstats = {0:[2,1], 5:[0,3]}; save.nick = '붕어<왕>'; const p = parseCode(myCode()); save.qstats = keep.q; save.nick = keep.n; ok(p && p.n === '붕어<왕>' && p.q[0][0] === 2 && p.q[5][1] === 3 && parseCode('BB1-!!!') === null && parseCode('BB1-' + b64(JSON.stringify({v:1,n:'x',q:'99999.1.1'}))) === null, '결과 코드 왕복과 검사'); }
+  { const r = mulberry32(3), n = {}; for(let i=0;i<100000;i++){ const t = rollGacha(r).tier; n[t] = (n[t]||0) + 1; } ok(n.dimension > 200 && n.dimension < 420 && n.myth > 3400 && n.myth < 4600, '손님 뽑기 확률 2배'); }
+  { const keep = save.kettle; save.kettle = KETTLES.length - 1; const inf = moldLimit({phase:'perfect',t:0,f:'pat'}) === Infinity && moldLimit({phase:'flip',t:0,f:'pat'}) === Infinity; save.kettle = keep; ok(inf, '챌린저 주전자는 타지 않음'); }
   ok(iyeyo('대조영')==='이에요' && iyeyo('온조')==='예요', '조사');
   for(const q of QB.questions){ const ch = choicesFor(q); ok(ch.length===4 && new Set(ch).size===4 && ch.includes(q.a), '보기 4개: ' + q.q); }
   const m = {phase:'front', t:0, f:'pat'}; for(let i=0;i<70;i++) stepMold(m,.1); ok(m.phase==='flip', '앞면 6초 뒤 뒤집기');
