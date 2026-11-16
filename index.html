@@ -150,7 +150,7 @@ svg{display:block}
 .shake{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-.kitchen{display:grid;grid-template-columns:minmax(0,1fr) clamp(120px,12vw,170px);gap:12px;padding-top:18px;min-height:0}
+.kitchen{display:grid;grid-template-columns:minmax(0,1fr) clamp(160px,15vw,210px);gap:12px;padding-top:18px;min-height:0}
 .griddle{background:var(--grid,var(--iron));border:var(--grid-rim,0 solid transparent);border-radius:10px;padding:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;box-shadow:0 8px 0 #1c1a18,inset 0 3px 0 var(--iron-2);min-height:0}
 .mold{position:relative;border-radius:10px;background:radial-gradient(circle at 50% 42%,#45403b,#24211f 75%);box-shadow:inset 0 0 0 3px #57504a;display:grid;place-items:center;min-height:0;overflow:hidden}
 .mold svg.fish{width:72%;max-height:68%;color:var(--fish);transition:color .3s}
@@ -208,13 +208,13 @@ svg.fish.flipping{animation:flipfish .45s ease-in-out}
 @keyframes flipfish{50%{transform:translateY(-14px) scaleY(.1)}}
 .fx .fly{position:absolute;left:14%;top:16%;width:72%;color:var(--c);animation:fly .5s cubic-bezier(.3,0,.7,1) forwards}
 @keyframes fly{40%{translate:0 -24px;scale:1.08}100%{translate:0 -90px;scale:.5;opacity:0}}
-.tins{display:grid;grid-template-rows:repeat(4,minmax(0,1fr));gap:4px;min-height:0;background:var(--wood);border-radius:4px;padding:8px 10px;box-shadow:0 8px 0 var(--wood-3)}
-.tin{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;padding:2px 2px;text-align:left;min-height:0;color:#fffaf0}
-.tub{position:relative;width:clamp(52px,4.8vw,68px);aspect-ratio:1.25;border-radius:5px 5px 16px 16px/5px 5px 22px 22px;background:linear-gradient(90deg,#8d969b,#e4e8ea 35%,#b8bfc3 70%,#8d969b);box-shadow:0 3px 6px rgba(40,20,0,.3);transition:translate .2s cubic-bezier(.16,1,.3,1)}
+.tins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4px 6px;min-height:0;background:var(--wood);border-radius:4px;padding:8px 10px;box-shadow:0 8px 0 var(--wood-3)}
+.tin{position:relative;display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;gap:2px;padding:2px;text-align:center;min-height:0;color:#fffaf0}
+.tub{position:relative;width:clamp(34px,2.9vw,44px);aspect-ratio:1.25;border-radius:5px 5px 16px 16px/5px 5px 22px 22px;background:linear-gradient(90deg,#8d969b,#e4e8ea 35%,#b8bfc3 70%,#8d969b);box-shadow:0 3px 6px rgba(40,20,0,.3);transition:translate .2s cubic-bezier(.16,1,.3,1)}
 .tub i{position:absolute;left:7%;right:7%;top:6%;height:40%;border-radius:50%;background:var(--fl);box-shadow:inset 0 4px 0 rgba(0,0,0,.22)}
-.tin .scoop{position:absolute;left:clamp(22px,2.2vw,32px);top:-10px;width:34px;height:42px;color:#e9edef;display:none;rotate:18deg;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
-.tin b{display:block;font-weight:400;font-size:clamp(19px,1.8vw,23px);line-height:1.1}
-.tin .pr{display:block;font-size:16px;color:#f6dcb4}
+.tin .scoop{position:absolute;left:calc(50% + 2px);top:-8px;width:26px;height:32px;color:#e9edef;display:none;rotate:18deg;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+.tin b{display:block;font-weight:400;font-size:clamp(16px,1.4vw,19px);line-height:1.1;white-space:nowrap}
+.tin .pr{display:block;font-size:16px;line-height:1.1;color:#f6dcb4}
 .tin .pr svg{width:18px;height:18px}
 .tin:hover:not(:disabled) .tub{translate:0 -3px}
 .tin[aria-checked="true"] .tub{translate:0 -6px}
@@ -539,7 +539,7 @@ body:has(.overlay:not([hidden])) .hint,body:has(.title:not([hidden])) .hint{disp
   .taste{font-size:16px}
   .kitchen{grid-template-columns:minmax(0,1fr)}
   .griddle{grid-template-rows:none;grid-auto-rows:minmax(96px,auto)}
-  .tins{grid-template-rows:none;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .tins{grid-template-rows:none;grid-template-columns:repeat(3,minmax(0,1fr))}
   .tin{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;padding:8px 2px}
   .tin .scoop{left:50%}
   .hint{position:static;max-width:none;margin-top:10px}
@@ -668,11 +668,13 @@ const FLAVORS = [
   {id:'cream', name:'슈크림', price:400, extra:0, color:'#c98a00', unlock:0},
   {id:'choco', name:'초코',  price:500, extra:0, color:'#5a3825', unlock:8000},
   {id:'pizza', name:'피자',  price:700, extra:1, color:'#c4402f', unlock:15000},
+  {id:'dubai', name:'두바이', price:1200, extra:1, color:'#6f8f2e', unlock:100000, title:'두바이 붕어빵 (두쫀쿠)'},
+  {id:'mochi', name:'딸기찹쌀떡', price:2000, extra:1, color:'#e8607f', unlock:300000, title:'한정선 붕어빵 (딸기찹쌀떡)'},
 ];
 const FL = Object.fromEntries(FLAVORS.map(f => [f.id, f]));
 const MOLD_PRICE = {3:4000, 4:9000, 5:16000, 6:26000};
-const FIRE_PRICE = [6000, 12000, 20000];
-const FIRE_CUT = [0, .15, .25, .35];
+const FIRE_PRICE = [6000, 12000, 20000, 40000];
+const FIRE_CUT = [0, .15, .25, .35, .45];
 // 매점 꾸미기: 실력에는 영향이 없고 모양만 바뀐다(살 때 바로 쓴다)
 const RAINBOW = 'repeating-linear-gradient(90deg,#d9352b 0 44px,#ffc81f 44px 88px,#2c9a55 88px 132px,#1e4fb6 132px 176px,#8b3fd1 176px 220px)';
 const DECOR = {
@@ -724,8 +726,8 @@ function openDecor(){
   });
 }
 
-// 손님 뽑기: 1회 10,000원. 드문 손님 확률은 평소의 2배이고, 뽑은 손님은 다음 날 꼭 온다(최대 3명까지 예약)
-const GACHA_PRICE = 10000, GACHA_MAX = 3;
+// 손님 뽑기: 1회 10,000원. 드문 손님 확률은 평소의 2배이고, 뽑은 손님은 다음 날 꼭 온다(하루 최대 5명까지 예약)
+const GACHA_PRICE = 10000, GACHA_MAX = 5;
 const GACHA_ODDS = {dimension:.003, fantasy:.016, myth:.04, legend:.24};
 function rollGacha(rand = Math.random){
   let r = rand(), tier = 'rare';
@@ -855,7 +857,7 @@ function load(){
     if(s && s.v === 1){
       save = Object.assign(fresh(), s);
       save.molds = Math.min(6, Math.max(2, save.molds|0));
-      save.fire = Math.min(3, Math.max(0, save.fire|0));
+      save.fire = Math.min(FIRE_CUT.length - 1, Math.max(0, save.fire|0));
       save.kettle = Math.min(KETTLES.length - 1, Math.max(0, save.kettle|0));
       save.reserved = (Array.isArray(save.reserved) ? save.reserved : []).filter(id => GUEST[id]).slice(0, GACHA_MAX);
       const d = save.decor && typeof save.decor === 'object' ? save.decor : {}, all = Object.values(DECOR).flatMap(x => x.items.map(i => i.id));
@@ -908,7 +910,7 @@ function rollTier(){
 }
 function spawnGuest(){
   const here = new Set(G.guests.map(g => g.ch));
-  const left = G.target - G.spawned, due = save.reserved.length && ([1,3,5].includes(G.spawned) || left <= save.reserved.length);
+  const left = G.target - G.spawned, due = save.reserved.length && ((G.spawned % 2 === 1) || left <= save.reserved.length)   /* 2·4·6번째, 남은 자리가 모자라면 바로 */;
   let ch;
   if(due && !here.has(save.reserved[0])){ ch = GUEST[save.reserved.shift()]; }   // 손님 뽑기로 예약한 손님은 꼭 온다
   else {
@@ -1393,8 +1395,9 @@ function shopItems(){
   items.push(nk < KETTLES.length
     ? {key:'kettle', title:KETTLES[nk].name, desc:kettleDesc(KETTLES[nk]), price:KETTLES[nk].price, kettle:nk}
     : {key:'kettle', title:KETTLES[save.kettle].name, desc:kettleDesc(KETTLES[save.kettle]), owned:true, kettle:save.kettle});
-  items.push(save.fire < 3 ? {key:'fire', title:`센 불 ${save.fire+1}단계`, desc:`${FIRE_CUT[save.fire+1]*100}% 빨리 구워요`, price:FIRE_PRICE[save.fire]} : {key:'fire', title:'센 불 3단계', desc:'가장 센 불', owned:true});
-  for(const f of FLAVORS) if(f.unlock) items.push({key:'recipe:'+f.id, title:`${f.name} 붕어빵`, desc:`한 개 ${won(f.price)}`, price:f.unlock, owned:save.recipes.includes(f.id)});
+  const topFire = FIRE_CUT.length - 1;
+  items.push(save.fire < topFire ? {key:'fire', title:`센 불 ${save.fire+1}단계`, desc:`${FIRE_CUT[save.fire+1]*100}% 빨리 구워요`, price:FIRE_PRICE[save.fire]} : {key:'fire', title:`센 불 ${topFire}단계`, desc:'가장 센 불', owned:true});
+  for(const f of FLAVORS) if(f.unlock) items.push({key:'recipe:'+f.id, title:f.title || `${f.name} 붕어빵`, desc:`한 개 ${won(f.price)}`, price:f.unlock, owned:save.recipes.includes(f.id)});
   return items;
 }
 function buy(key){
@@ -1449,7 +1452,7 @@ function openPrep(){
       <h3>매점 물건 · 가진 돈 <span class="wallet">${won(save.money)}</span></h3>
       <div class="shop">${shopItems().map(it=>`<button class="buy ${it.owned?'owned':''}" data-k="${it.key}" ${it.owned||save.money<it.price?'disabled':''}>
         <div class="buy-t">${it.kettle != null ? `<span class="mini-kettle" style="--kb:${KETTLES[it.kettle].body};--kl:${KETTLES[it.kettle].line};--kd:${KETTLES[it.kettle].lid}">${TOOL.kettle}</span>` : ''}<div><b>${it.title}</b><span>${it.desc}</span></div></div><span class="price">${it.owned ? icon('i-check') + '있음' : won(it.price)}</span></button>`).join('')}
-        <div class="shop-extra"><button class="buy" id="gachaBtn" type="button" ${save.money < GACHA_PRICE || save.reserved.length >= GACHA_MAX ? 'disabled' : ''}><div><b>내일 손님 뽑기</b><span>${save.reserved.length >= GACHA_MAX ? '예약 가득 (3명)' : `드문 손님 2배 · 꼭 와요 · ${save.reserved.length}/${GACHA_MAX}`}</span></div><span class="price">${won(GACHA_PRICE)}</span></button>
+        <div class="shop-extra"><button class="buy" id="gachaBtn" type="button" ${save.money < GACHA_PRICE || save.reserved.length >= GACHA_MAX ? 'disabled' : ''}><div><b>내일 손님 뽑기</b><span>${save.reserved.length >= GACHA_MAX ? `예약 가득 (${GACHA_MAX}명)` : `드문 손님 2배 · 꼭 와요 · ${save.reserved.length}/${GACHA_MAX}`}</span></div><span class="price">${won(GACHA_PRICE)}</span></button>
         <button class="buy" id="decorBtn" type="button"><div><b>매점 꾸미기</b><span>${save.decor.owned.length - 3}/${Object.values(DECOR).reduce((n,d)=>n+d.items.length-1,0)}개 모음</span></div><span class="price">고르기</span></button></div></div>
       <button class="big" id="startDay">${save.day}일째 장사 시작</button>
     </div>`;
@@ -1497,6 +1500,8 @@ const FX = {
   pat: () => TOOL.spoon('#6b2228') + bits([[40,.45,'#7a2a2e','',9],[48,.5,'#8a3434','',8],[55,.42,'#6b2228','',10],[44,.58,'#8a3434','',7],[52,.62,'#7a2a2e','',9]]),
   cream: () => TOOL.bag,
   choco: () => TOOL.bottle + '<svg class="driz" viewBox="0 0 100 30"><path d="M4 8 L20 24 L36 6 L52 24 L68 6 L84 24 L96 10" fill="none" stroke="#4a2a18" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  dubai: () => TOOL.spoon('#6f8f2e') + bits([[40,.42,'#8fb34a','shred','',25],[47,.47,'#7a9a3a','shred','',-35],[54,.44,'#a3c75a','shred','',60],[44,.56,'#4a2a18','',10],[52,.6,'#5a3825','',9],[48,.52,'#8fb34a','shred','',-10]]),
+  mochi: () => TOOL.spoon('#fff6f2') + bits([[46,.45,'#fff6f2','',20],[44,.58,'#e8303f','',10],[52,.62,'#e8303f','',9],[49,.66,'#4f9a3a','',6]]),
   pizza: () => TOOL.bowl + bits([[40,.4,'#f3c94a','shred','',20],[47,.46,'#f3c94a','shred','',-30],[54,.42,'#f6d76a','shred','',50],[44,.55,'#a8261e','',11],[53,.6,'#a8261e','',11],[49,.5,'#4f8a3a','',7]]),
   take: (c) => `<svg class="fly" viewBox="0 0 170 110" style="--c:${c}"><use href="#fish"/></svg>`,
 };
@@ -1504,12 +1509,14 @@ const MARK = {
   pat:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="20" rx="20" ry="12" fill="#5e1f24"/><circle cx="22" cy="17" r="4" fill="#8a3434"/><circle cx="32" cy="23" r="4" fill="#7a2a2e"/><circle cx="38" cy="15" r="3.5" fill="#8a3434"/><circle cx="27" cy="26" r="3" fill="#9a4040"/></svg>',
   cream:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="22" rx="19" ry="11" fill="#f2cf5b"/><path d="M17 23c4-9 22-9 26 0c-5 6-18 6-20 0c2-5 12-5 14 0" fill="none" stroke="#d9a520" stroke-width="2.5" stroke-linecap="round"/></svg>',
   choco:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="20" rx="20" ry="12" fill="#4a2a18"/><path d="M14 18l8 6l8-8l8 8l8-6" fill="none" stroke="#7a4a2a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  dubai:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="20" rx="20" ry="12" fill="#4a2a18"/><path d="M16 17q5-5 9 0t9 0 9 0M18 24q5-4 9 0t9 0 8 0" fill="none" stroke="#9cc256" stroke-width="3" stroke-linecap="round"/></svg>',
+  mochi:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="21" rx="20" ry="12" fill="#fff6f2" stroke="#f2c2c8" stroke-width="2"/><path d="M30 12c6 0 9 5 6 10-2 3-6 5-6 5s-4-2-6-5c-3-5 0-10 6-10z" fill="#e8303f"/><path d="M27 11l3 3 3-3" stroke="#4f9a3a" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="28" cy="19" r=".9" fill="#ffd36a"/><circle cx="32" cy="22" r=".9" fill="#ffd36a"/></svg>',
   pizza:'<svg viewBox="0 0 60 40"><ellipse cx="30" cy="20" rx="21" ry="12" fill="#c4402f"/><path d="M16 15l6 3M30 12l5 4M40 22l6-2M22 26l7-1M33 27l3 3" stroke="#f3c94a" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="19" r="4" fill="#8f2219"/><circle cx="38" cy="16" r="4" fill="#8f2219"/><circle cx="33" cy="25" r="3.5" fill="#8f2219"/></svg>',
 };
 function fx(el, kind, arg){
   const make = FX[kind]; if(!make) return;
   const box = document.createElement('span');
-  box.className = `fx fx-${kind}` + (['pat','cream','choco','pizza'].includes(kind) ? ' fx-fill' : '');
+  box.className = `fx fx-${kind}` + (FL[kind] ? ' fx-fill' : '');
   box.innerHTML = make(arg);
   el.appendChild(box); setTimeout(() => box.remove(), 1100);
 }
