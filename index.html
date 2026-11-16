@@ -79,7 +79,7 @@ svg{display:block}
 .queue{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end;padding-top:34px;min-height:0}
 .spot{position:relative;height:100%;display:flex;align-items:flex-end;justify-content:center;min-width:0}
 .spot.wait::after{content:"";width:62%;height:16px;border:3px dashed var(--line,rgba(255,250,240,.75));border-radius:50%;margin-bottom:6px}
-.guest{position:relative;display:flex;align-items:flex-end;gap:6px;max-width:100%;cursor:default;animation:walkin .5s cubic-bezier(.16,1,.3,1)}
+.guest{position:relative;display:flex;align-items:flex-end;gap:6px;max-width:100%;cursor:pointer;animation:walkin .5s cubic-bezier(.16,1,.3,1)}
 @keyframes walkin{from{transform:translateX(60px);opacity:0}}
 .guest.leave{animation:leave .5s ease-in forwards}
 .guest.leave.happy{animation:hop .5s ease-in forwards}
@@ -128,6 +128,10 @@ svg{display:block}
 .item svg{width:88%;height:auto}
 .item .tag{position:absolute;bottom:-8px;left:50%;translate:-50% 0;font-size:16px;line-height:1.2;background:var(--chalk);color:var(--ink);border-radius:2px;padding:0 6px;white-space:nowrap}
 .item:hover{background:rgba(255,255,255,.14)}
+.item.picked{background:rgba(255,255,255,.3);outline:4px solid var(--yellow);translate:0 -8px}
+.guest:focus-visible{outline:4px solid var(--blue);outline-offset:4px;border-radius:8px}
+.guest.canget .slip{box-shadow:0 0 0 5px var(--blue),0 3px 8px rgba(60,30,0,.22);animation:askme .8s ease-in-out infinite}
+@keyframes askme{50%{translate:0 -5px}}
 .item:active{scale:.92}
 .shake{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
@@ -208,7 +212,7 @@ svg.fish.flipping{animation:flipfish .45s ease-in-out}
 .coach::before{content:"";position:absolute;inset:3px;border:4px solid var(--blue);border-radius:10px;animation:coach 1s ease-in-out infinite;pointer-events:none;z-index:4}
 .item.coach::before{inset:-6px}
 @keyframes coach{50%{opacity:.35}}
-.hint{position:absolute;right:14px;bottom:14px;z-index:7;max-width:46%;background:var(--blue);color:#fff;font-size:clamp(17px,1.6vw,22px);padding:8px 16px;border-radius:4px;box-shadow:0 4px 12px rgba(20,30,80,.3);pointer-events:none}
+.hint{position:absolute;left:50%;top:40px;translate:-50% 0;z-index:7;max-width:70%;white-space:nowrap;background:var(--blue);color:#fff;font-size:clamp(17px,1.6vw,22px);padding:8px 16px;border-radius:4px;box-shadow:0 4px 12px rgba(20,30,80,.3);pointer-events:none}
 .hint:empty{display:none}
 body:has(.overlay:not([hidden])) .hint,body:has(.title:not([hidden])) .hint{display:none}
 
@@ -737,7 +741,7 @@ function newDay(){
     counter:[], guests:[], nextId:1, target:DAY_GUESTS, flags:[],
     spawned:0, resolved:0, spawnIn:cfg.first,
     topic:save.topic, sinceQuiz:0, quizLeft:0, nextKind:'mc', vol:false, studyCd:8, streak:0, deckMC:[], deckSA:[], review:[], asked:0,
-    combo:0, bestCombo:0, buzz:0, fever:0,
+    pick:null, combo:0, bestCombo:0, buzz:0, fever:0,
     d:{sales:0, quiz:0, served:0, left:0, burnt:0, perfect:0, qRight:0, qTotal:0, rare:0, study:0}, taught:{}};
   if(!save.recipes.includes(selected)) selected = 'pat';
   shownCombo = '';
@@ -849,14 +853,40 @@ function stepMold(m, dt){
 }
 
 // ---------- 진열대 → 손님 ----------
+// 진열대 붕어빵은 먼저 온 손님이 아니어도 줄 수 있다:
+//  - 붕어빵을 누르면: 그 맛을 기다리는 손님이 하나면 바로 주고, 여럿이면 붕어빵을 집은 뒤 줄 손님을 누른다
+//  - 손님을 누르면: 그 손님이 시킨 맛을 진열대에서 모두 준다(노릇한 것부터)
+function giveItem(it, c){
+  const i = G.counter.indexOf(it); if(i < 0) return;
+  G.counter.splice(i,1); c.got.push(it); G.taught.serve = 1; G.pick = null;
+  dirty.counter = dirty.queue = true;
+  if(complete(c)) resolveGuest(c, true);
+}
 function tapItem(idx){
   if(!G || G.paused) return;
   const it = G.counter[idx]; if(!it) return;
-  const c = G.guests.find(c => !c.leaving && need(c, it.f) > 0);
-  if(!c){ toast(`${FL[it.f].name} 붕어빵을 기다리는 손님이 없어요`); jiggle(counterEl.querySelectorAll('.item')[idx]); return; }
-  G.counter.splice(idx,1); c.got.push(it); G.taught.serve=1;
+  const cands = G.guests.filter(c => !c.leaving && need(c, it.f) > 0);
+  if(!cands.length){ toast(`${FL[it.f].name} 붕어빵을 기다리는 손님이 없어요`); jiggle(counterEl.querySelectorAll('.item')[idx]); return; }
+  if(cands.length === 1){ giveItem(it, cands[0]); return; }
+  G.pick = G.pick === it ? null : it;            // 다시 누르면 내려놓는다
   dirty.counter = dirty.queue = true;
-  if(complete(c)) resolveGuest(c, true);
+}
+function tapGuest(c){
+  if(!G || G.paused || !c || c.leaving) return;
+  if(G.pick){
+    if(need(c, G.pick.f) > 0) giveItem(G.pick, c);
+    else toast(`${GUEST[c.ch].name}은(는) ${FL[G.pick.f].name} 붕어빵을 안 시켰어요`);
+    return;
+  }
+  let given = 0;
+  for(const f of Object.keys(c.order)){
+    while(need(c, f) > 0 && !c.leaving){
+      const it = G.counter.find(x => x.f === f && x.q === 'perfect') || G.counter.find(x => x.f === f);
+      if(!it) break;
+      giveItem(it, c); given++;
+    }
+  }
+  if(!given) toast('이 손님이 시킨 붕어빵이 진열대에 없어요');
 }
 
 // ---------- 문제 ----------
@@ -1248,6 +1278,8 @@ const notesOv=$('notes'), notesPanel=$('notesPanel');
 const goalOv=$('goal'), goalPanel=$('goalPanel'), pauseOv=$('pause'), pausePanel=$('pausePanel');
 const prepOv=$('prep'), prepPanel=$('prepPanel'), quizOv=$('quiz'), quizPanel=$('quizPanel'), resultOv=$('result'), resultPanel=$('resultPanel');
 const dirty = {queue:true, counter:true, garland:true};
+queueEl.addEventListener('click', e => { const el = e.target.closest('[data-cid]'); if(el && G) tapGuest(G.guests.find(c => c.id === +el.dataset.cid)); });
+queueEl.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-cid]')){ e.preventDefault(); e.target.click(); } });
 document.getElementById('studyBtn').onclick = () => openStudy();
 let moldEls = [], shownMoney = '', shownCombo = '';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1396,7 +1428,8 @@ function renderQueue(){
       const c = G.guests[s];
       if(!c){ spots.push(`<div class="spot ${s < slots && G.spawned < G.target ? 'wait' : ''}"></div>`); continue; }
       const g = GUEST[c.ch], tier = g.tier;
-      spots.push(`<div class="spot"><div class="guest ${tier} ${g.group?'group':''} ${c.leaving?'leave':''} ${c.happy?'happy':''}" data-cid="${c.id}">
+      const can = G.pick && !c.leaving && need(c, G.pick.f) > 0;
+      spots.push(`<div class="spot"><div class="guest ${tier} ${g.group?'group':''} ${c.leaving?'leave':''} ${c.happy?'happy':''} ${can?'canget':''}" data-cid="${c.id}" role="button" tabindex="0" aria-label="${esc(g.name)}에게 붕어빵 주기">
         <span class="fig ${tier}"><img src="${g.img}" alt="${esc(g.name)}" style="max-height:${Math.round((g.h||256)*1.7)}px">${tier==='legend'||tier==='myth' ? `<span class="sash">${TIER[tier].name} 손님</span>` : ''}</span>
         <div class="slip">${c.isNew ? '<span class="newstamp">처음 온 손님</span>' : ''}
           ${tier==='legend'||tier==='myth' ? `<span class="tier ${tier}">${TIER[tier].name}</span>` : ''}
@@ -1415,13 +1448,16 @@ function renderQueue(){
 }
 function renderCounter(){
   if(!dirty.counter) return; dirty.counter = false;
-  counterEl.innerHTML = `<span class="carve">진열대</span>` + G.counter.map((it,i)=>`<button class="item" data-i="${i}" aria-label="${FL[it.f].name} 붕어빵 건네기" style="color:${it.q==='perfect'?'#d48a1e':'#8a4b16'}">
+  if(G.pick && !G.counter.includes(G.pick)) G.pick = null;
+  counterEl.innerHTML = `<span class="carve">진열대</span>` + G.counter.map((it,i)=>`<button class="item${it===G.pick?' picked':''}" data-i="${i}" aria-label="${FL[it.f].name} 붕어빵 건네기" style="color:${it.q==='perfect'?'#d48a1e':'#8a4b16'}">
       <svg viewBox="0 0 170 110"><use href="#fish"/></svg><span class="tag">${FL[it.f].name}</span></button>`).join('');
   counterEl.querySelectorAll('.item').forEach(b => b.onclick = () => tapItem(+b.dataset.i));
 }
 let coachEl = null;
 function renderHint(){
   let h = '', target = null;
+  if(G.pick){ h = `${FL[G.pick.f].name} 붕어빵을 줄 손님을 눌러요`; target = null; }
+  else
   if(save.stats.served < 4 && G.day <= 2){
     const idx = p => G.molds.findIndex(m => m.phase === p);
     if(idx('burnt') >= 0){ h = '탄 붕어빵은 눌러서 버려요'; target = moldEls[idx('burnt')]; }
